@@ -1,0 +1,52 @@
+name: Deploy to AWS ECS
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to the main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'  
+
+      - name: Build Docker image
+        run: |
+          docker build -t my-react-app .
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Tag and push Docker image to ECR
+        run: |
+          docker tag my-react-app:latest ${{ secrets.ECR_REPOSITORY_URI }}:latest
+          docker push ${{ secrets.ECR_REPOSITORY_URI }}:latest
+
+      - name: Deploy to AWS ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          family: my-ecs-task
+          container-name: my-react-app
+          image-uri: ${{ secrets.ECR_REPOSITORY_URI }}:latest
+          cluster: my-ecs-cluster
+          service: my-ecs-service
+
+      - name: Run Integration Tests
+        run: |
+          # Replace with your test command
+          npm run test
+
+      - name: Rollback in case of failure
+        if: failure()
+        run: |
+          echo "Rolling back deployment"
+          # Example rollback command
+          aws ecs update-service --cluster my-ecs-cluster --service my-ecs-service --force-new-deployment
