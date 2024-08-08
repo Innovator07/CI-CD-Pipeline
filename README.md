@@ -1,5 +1,5 @@
 CI/CD Pipeline for Web Application Deployment
-This repository contains a GitHub Actions workflow configured for the automated deployment, integration testing, and rollback of a simple React web application using Google Cloud Platform (GCP). The pipeline utilizes Docker, Google Container Registry (GCR), and Google Kubernetes Engine (GKE) to manage the deployment process.
+This repository contains a GitHub Actions workflow configured for the automated deployment, integration testing, and rollback of a simple React web application using Google Cloud Platform (GCP). The pipeline leverages Docker, Google Container Registry (GCR), and Google Kubernetes Engine (GKE) to manage the deployment process effectively.
 
 Project Structure
 The project includes the following key components:
@@ -8,14 +8,15 @@ Dockerfile: Defines the multi-stage build process and sets up Nginx as the rever
 nginx.conf: Configuration file for Nginx.
 .github/workflows/deploy.yml: GitHub Actions workflow file for CI/CD.
 src/: Source code for the React application.
-
 Setup Instructions
 Prerequisites
-Google Cloud Account: Ensure you have a Google Cloud account with GCR and GKE access.
+Before setting up the pipeline, ensure you have the following:
+
+Google Cloud Account: Access to GCR and GKE.
 GitHub Repository: Fork or clone this repository to your GitHub account.
-Docker: Install Docker on your local machine.
-kubectl: Install kubectl for interacting with GKE.
-gcloud CLI: Install and configure the Google Cloud SDK.
+Docker: Installed on your local machine.
+kubectl: For interacting with GKE.
+gcloud CLI: Installed and configured for Google Cloud SDK.
 Configuration
 Set Up Google Cloud Credentials:
 
@@ -31,7 +32,7 @@ Nginx Configuration:
 
 Modify nginx.conf if you have specific configurations for your application.
 Building and Running Locally
-To build and run the Docker image locally:
+To build and run the Docker image locally, follow these steps:
 
 bash
 Copy code
@@ -52,10 +53,11 @@ Deploy on GKE: Deploys the Docker image to Google Kubernetes Engine.
 Integration Tests: Runs integration tests to verify the deployment.
 Rollback: Rolls back to the previous version if the deployment fails.
 Integration Tests
-The pipeline includes integration tests to ensure the deployment is functioning correctly. If any tests fail, the workflow will automatically rollback to the previous stable version.
+The pipeline includes integration tests to ensure the deployment is functioning correctly. If any tests fail, the workflow will automatically roll back to the previous stable version.
 
 License
 This project is licensed under the MIT License. See the LICENSE file for details.
 
 Contact
-For any questions or issues, please contact Shubham Jha(Innovator07).
+For any questions or issues, please contact Shubham Jha (Innovator07).
+
