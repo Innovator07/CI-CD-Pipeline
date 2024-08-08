@@ -1,52 +1,60 @@
-name: Deploy to AWS ECS
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
-      - main  # Trigger on push to the main branch
+      - main
 
 jobs:
-  build-and-deploy:
+  build:
+    name: Build Docker Image
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Google Container Registry
+        run: echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" | gcloud auth activate-service-account --key-file=-
+        env:
+          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Configure Docker for gcloud
+        run: gcloud auth configure-docker
+
+      - name: Build and push Docker image
+        run: |
+          docker buildx build --platform linux/amd64 -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-app:latest --push .
+
+  deploy:
+    name: Deploy to GKE
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up GCP
+        uses: google-github-actions/setup-gcloud@v1
         with:
-          node-version: '16'  
+          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Build Docker image
+      - name: Authenticate kubectl
+        run: gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} --zone ${{ secrets.GKE_CLUSTER_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy to GKE
+        run: kubectl apply -f k8s-deployment.yaml
+
+      - name: Integration Tests
         run: |
-          docker build -t my-react-app .
-
-      - name: Log in to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Tag and push Docker image to ECR
-        run: |
-          docker tag my-react-app:latest ${{ secrets.ECR_REPOSITORY_URI }}:latest
-          docker push ${{ secrets.ECR_REPOSITORY_URI }}:latest
-
-      - name: Deploy to AWS ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          family: my-ecs-task
-          container-name: my-react-app
-          image-uri: ${{ secrets.ECR_REPOSITORY_URI }}:latest
-          cluster: my-ecs-cluster
-          service: my-ecs-service
-
-      - name: Run Integration Tests
-        run: |
-          # Replace with your test command
-          npm run test
-
-      - name: Rollback in case of failure
-        if: failure()
-        run: |
-          echo "Rolling back deployment"
-          # Example rollback command
-          aws ecs update-service --cluster my-ecs-cluster --service my-ecs-service --force-new-deployment
+          # Run your integration tests here
+          if ! ./run-tests.sh; then
+            echo "Integration tests failed, rolling back..."
+            kubectl rollout undo deployment my-app
+            exit 1
+          fi
