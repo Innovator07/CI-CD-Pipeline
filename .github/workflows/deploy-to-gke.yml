@@ -22,6 +22,7 @@ jobs:
         with:
           token_format: 'access_token'
           workload_identity_provider: 'projects/${{ secrets.GCP_PROJECT_ID }}/locations/global/workloadIdentityPools/${{ secrets.WORKLOAD_IDENTITY_POOL_ID }}/providers/${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}'
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
 
       - name: Get GKE credentials
         run: |
@@ -33,8 +34,3 @@ jobs:
         run: |
           kubectl apply -f kubernetes/deployment.yaml
           kubectl apply -f kubernetes/service.yaml
-
-      # Optional: Cleanup Google Cloud SDK and temporary files
-      - name: Cleanup
-        run: |
-          rm -f $HOME/gcloud-key.json
